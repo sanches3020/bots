@@ -12,9 +12,9 @@ class FormUrl(StatesGroup):
 
 @router.message(F.text == "Добавить ссылку")
 async def handle_start(message: Message, state: FSMContext):
-    user_id = message.from_user.id
+    id = message.from_user.id
 
-    cursor.execute("SELECT * FROM MyTable WHERE id = ?", (user_id,))
+    cursor.execute("SELECT * FROM MyTable WHERE id = ?", (id,))
     user = cursor.fetchone()
 
     if user:
@@ -25,21 +25,21 @@ async def handle_start(message: Message, state: FSMContext):
 
 @router.message(FormUrl.url)
 async def handle_url(message: Message, state: FSMContext):
-    user_id = message.from_user.id
+    id = message.from_user.id
     url = message.text
 
-    await state.update_data(user_id=user_id, url=url)
+    await state.update_data(id=id, url=url)
 
     task = scheduler.add_job(
         parser_update,
         trigger='interval',
         seconds=60,
-        kwargs={'user_id': user_id, 'bot': bot}
+        kwargs={'id': id, 'bot': bot}
     )
 
     cursor.execute(
         "INSERT INTO MyTable (id, url, id_task) VALUES (?, ?, ?)",
-        (user_id, url, task.id)
+        (id, url, task.id)
     )
     con.commit()
 
@@ -52,3 +52,9 @@ async def handle_url(message: Message, state: FSMContext):
         "Парсер успешно запущен.",
         reply_markup=kb_builder.as_markup(resize_keyboard=True)
     )
+
+    class_names = "styles_wrapper__5FoK7"
+    inner_class_name ="styles_secondary_MzEb" 
+    result = parse_website(url, class_names, inner_class_name)[:5]
+    with open (f'data/{id}.json', 'w', encoding='utf-8') as file: 
+        file.write(json.dumps( result))

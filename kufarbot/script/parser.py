@@ -33,13 +33,13 @@ def parse_website(url, class_name, inner_class_name):
 
     return parsed_data
 
-async def parser_update(user_id, bot: Bot):
+async def parser_update(id, bot: Bot):
     
-    cursor.execute("SELECT url FROM MyTable WHERE id = %s", (user_id,))
+    cursor.execute("SELECT url FROM MyTable WHERE id = ?", (id,))
     user_data = cursor.fetchone()
 
     if not user_data:
-        print(f"Не удалось найти пользователя с ID: {user_id}")
+        print(f"Не удалось найти пользователя с ID: {id}")
         return
 
     url = user_data[0]
@@ -50,14 +50,14 @@ async def parser_update(user_id, bot: Bot):
     result = parse_website(url, class_names, inner_class_name)[:5]
 
     try:
-        with open(f"{user_id}.json", "r", encoding="utf-8") as file:
+        with open(f"{id}.json", "r", encoding="utf-8") as file:
             old_result = json.load(file)
     except FileNotFoundError:
         old_result = []
 
     data = [item for item in result if item not in old_result]
 
-    with open(f"{user_id}.json", "w", encoding="utf-8") as file:
+    with open(f"{id}.json", "w", encoding="utf-8") as file:
         json.dump(result, file, ensure_ascii=False, indent=4)
 
         for mess in data:
@@ -66,5 +66,5 @@ async def parser_update(user_id, bot: Bot):
                 web_app=WebAppInfo(url=mess[3])))
 
             await bot.send_photo(caption=f'{mess[0]}\{mess[2]}',
-                chat_id=user_id, photo=mess[1],
+                chat_id=id, photo=mess[1],
                 reply_markup=builder.as_markup(resize_keyboard=True))
